@@ -251,12 +251,12 @@ fn update_shortcut(
         backend.set_shortcut(current)?;
         return Err(error);
     }
-    if kind == Kind::Sway {
-        if let Err(error) = backend::sway_command("reload") {
-            shortcut::save(dir, current, kind)?;
-            backend::sway_command("reload")?;
-            return Err(error);
-        }
+    if kind == Kind::Sway
+        && let Err(error) = backend::sway_command("reload")
+    {
+        shortcut::save(dir, current, kind)?;
+        backend::sway_command("reload")?;
+        return Err(error);
     }
     Ok(())
 }

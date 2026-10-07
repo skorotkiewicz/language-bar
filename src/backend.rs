@@ -195,6 +195,7 @@ fn sway_layouts() -> Result<Layouts> {
 }
 
 fn sway_inputs(inputs: &serde_json::Value) -> Result<Layouts> {
+    // ponytail: show the first keyboard and switch all; use per-device trays if layouts differ.
     let input = inputs
         .as_array()
         .ok_or("Invalid Sway input response")?

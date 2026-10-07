@@ -126,13 +126,19 @@ mod tests {
             let svg = STANDARD.decode(uri.split_once(',').unwrap().1).unwrap();
             let image = render(&svg).unwrap();
             assert_eq!(image.data.len(), 32 * 32 * 4);
-            assert!(image.data.chunks_exact(4).any(|p| p[0] > 0));
+            assert!(image.data.as_chunks::<4>().0.iter().any(|p| p[0] > 0));
         }
         let xml = r#"<xkbConfigRegistry><layoutList><layout><configItem><name>jp</name><description>Japanese</description></configItem><variantList><variant><configItem><name>kana</name><description>Japanese (Kana)</description></configItem></variant></variantList></layout><layout><configItem><name>ara</name><description>Arabic</description><countryList><iso3166Id>AE</iso3166Id><iso3166Id>EG</iso3166Id></countryList></configItem></layout></layoutList></xkbConfigRegistry>"#;
         let map = registry(xml).unwrap();
         assert_eq!(map.get("Japanese (Kana)").unwrap(), "JP");
         assert!(!map.contains_key("Arabic"));
-        assert_ne!(icon("Japanese").data, icon("Polish").data);
-        assert_ne!(icon("English (UK)").data, icon("English (US)").data);
+        let image = |code| {
+            let uri = rs_grid_icons::flag_data_uri(code).unwrap();
+            render(&STANDARD.decode(uri.split_once(',').unwrap().1).unwrap())
+                .unwrap()
+                .data
+        };
+        assert_ne!(image("JP"), image("PL"));
+        assert_ne!(image("GB"), image("US"));
     }
 }

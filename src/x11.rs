@@ -259,13 +259,13 @@ impl Keyboard {
         if let Some(old) = current.as_ref() {
             self.ungrab(old)?;
         }
-        if let Some(new) = proposed.as_ref() {
-            if let Err(error) = self.grab(new) {
-                if let Some(old) = current.as_ref() {
-                    self.grab(old)?;
-                }
-                return Err(error);
+        if let Some(new) = proposed.as_ref()
+            && let Err(error) = self.grab(new)
+        {
+            if let Some(old) = current.as_ref() {
+                self.grab(old)?;
             }
+            return Err(error);
         }
         *current = proposed;
         Ok(())
