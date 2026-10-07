@@ -1,4 +1,4 @@
-<img align="right" src="assets/logo.svg" width="220" height="220" alt="A googly-eyed keyboard climbing out of a tray and waving Polish and German flags">
+<img align="right" src=".github/assets/logo.svg" width="220" height="220" alt="A googly-eyed keyboard climbing out of a tray and waving Polish and German flags">
 
 # Language bar
 
