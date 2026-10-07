@@ -60,7 +60,7 @@ pub fn binding(key: &str) -> Result<String, &'static str> {
 }
 
 fn atomic_write(path: &Path, bytes: &[u8]) -> io::Result<()> {
-    let temp = path.with_extension("tmp");
+    let temp = path.with_extension(format!("{}.tmp", std::process::id()));
     fs::write(&temp, bytes)?;
     fs::rename(temp, path)
 }
@@ -88,7 +88,11 @@ pub fn save(dir: &Path, shortcut: &Shortcut) -> Result<(), Box<dyn std::error::E
         "// Shortcut disabled. Enable it from the language tray menu.\n"
     };
     let path = dir.join("shortcut.kdl");
-    let previous = fs::read(&path).unwrap_or_default();
+    let previous = match fs::read(&path) {
+        Ok(bytes) => bytes,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Vec::new(),
+        Err(e) => return Err(e.into()),
+    };
     atomic_write(&path, config.as_bytes())?;
     if let Err(error) = atomic_write(
         &dir.join("settings.json"),
@@ -103,7 +107,7 @@ pub fn save(dir: &Path, shortcut: &Shortcut) -> Result<(), Box<dyn std::error::E
 
 pub fn instructions(dir: &Path) -> String {
     format!(
-        "Add this line once to your niri config, then enable the shortcut in the tray:\n\ninclude {}\n\nNiri reloads it automatically. Avoid keys already bound in your config.",
+        "Add this line once to your niri config. Use the tray checkbox to enable or disable the shortcut:\n\ninclude {}\n\nNiri reloads it automatically. Avoid keys already bound in your config.",
         serde_json::to_string(&dir.join("shortcut.kdl").to_string_lossy()).unwrap()
     )
 }

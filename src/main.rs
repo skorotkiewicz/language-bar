@@ -113,7 +113,6 @@ impl ksni::Tray for Tray {
                 select: Box::new(|tray: &mut Self, idx| {
                     let _ = tray.actions.send(Action::Select(idx));
                 }),
-                ..Default::default()
             }
             .into(),
             ksni::MenuItem::Separator,
@@ -295,7 +294,7 @@ fn run() -> Result<()> {
     for action in receiver {
         let result = match action {
             Action::Next => switch("next"),
-            Action::Select(idx) => switch(&(idx + 1).to_string()), // Niri's numeric targets are one-based.
+            Action::Select(idx) => switch(&idx.to_string()), // Niri's layout indexes are zero-based.
             Action::Configure => {
                 configure(settings.key.clone(), actions.clone());
                 Ok(())
