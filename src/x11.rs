@@ -271,3 +271,62 @@ impl Keyboard {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "needs an isolated X11 server with us,pl layouts and xdotool installed"]
+    fn live_xkb_switches_and_shortcut_grabs() {
+        let keyboard = Arc::new(Keyboard::connect().unwrap());
+        let before = keyboard.layouts().unwrap();
+        assert!(before.names.len() >= 2);
+        keyboard.switch("next").unwrap();
+        assert_eq!(
+            keyboard.layouts().unwrap().current_idx,
+            (before.current_idx + 1) % before.names.len()
+        );
+        keyboard.switch(&before.current_idx.to_string()).unwrap();
+        assert!(keyboard.switch("99").is_err());
+        let on = shortcut::Shortcut {
+            key: "Ctrl+Alt+L".into(),
+            enabled: true,
+        };
+        let off = shortcut::Shortcut {
+            enabled: false,
+            ..on.clone()
+        };
+        keyboard.set_shortcut(&on).unwrap();
+        let competing = Keyboard::connect().unwrap();
+        assert!(competing.set_shortcut(&on).is_err());
+        let (sender, receiver) = std::sync::mpsc::channel();
+        keyboard.watch(sender).unwrap();
+        for locks in [false, true] {
+            let args = if locks {
+                vec!["key", "Caps_Lock", "Num_Lock", "ctrl+alt+l"]
+            } else {
+                vec!["key", "ctrl+alt+l"]
+            };
+            assert!(
+                std::process::Command::new("xdotool")
+                    .args(args)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+            loop {
+                let action = receiver
+                    .recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
+                    .expect("shortcut did not fire");
+                if matches!(action, Action::Next) {
+                    break;
+                }
+            }
+        }
+        keyboard.set_shortcut(&off).unwrap();
+        competing.set_shortcut(&on).unwrap();
+        competing.set_shortcut(&off).unwrap();
+    }
+}
