@@ -1,5 +1,10 @@
 # Language bar
 
+[![Build](https://github.com/skorotkiewicz/language-bar/actions/workflows/build.yml/badge.svg)](https://github.com/skorotkiewicz/language-bar/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/skorotkiewicz/language-bar?color=blue)](https://github.com/skorotkiewicz/language-bar/releases/latest)
+[![AUR version](https://img.shields.io/aur/version/language-bar-bin?color=blue)](https://aur.archlinux.org/packages/language-bar-bin)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-lightgrey)](LICENSE)
+
 Rust keyboard-layout flag tray for Linux. Uses your active keyboard layout, not the system locale.
 
 | Session | Detection and switching | Custom shortcut |
@@ -10,7 +15,18 @@ Rust keyboard-layout flag tray for Linux. Uses your active keyboard layout, not 
 
 Other wlroots compositors, including river, labwc, and Wayfire, are not supported. wlroots does not provide a shared protocol for reading or changing the active keyboard layout. The app reports this instead of showing XWayland's unrelated layout.
 
-## Run
+## Install
+
+### Arch Linux
+
+Install [`language-bar-bin`](https://aur.archlinux.org/packages/language-bar-bin) from the AUR with `yay`, then start the tray:
+
+```sh
+yay -S language-bar-bin
+language-bar
+```
+
+### From source
 
 ```sh
 cargo run --release
