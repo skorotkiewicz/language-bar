@@ -6,8 +6,7 @@ pkgrel=1
 pkgdesc="Keyboard layout flag tray for niri, Sway, and X11"
 arch=('x86_64' 'aarch64')
 url="https://github.com/skorotkiewicz/language-bar"
-# The repository does not declare a license yet.
-license=('LicenseRef-unknown')
+license=('Unlicense')
 depends=('glibc' 'gcc-libs' 'libxkbcommon' 'xkeyboard-config' 'dbus')
 optdepends=(
   'zenity: shortcut configuration dialogs'
@@ -22,7 +21,6 @@ options=(!strip)
 source_x86_64=("$_pkgname-$pkgver-x86_64.tar.gz::$url/releases/download/v$pkgver/$_pkgname-v$pkgver-x86_64-unknown-linux-gnu.tar.gz")
 source_aarch64=("$_pkgname-$pkgver-aarch64.tar.gz::$url/releases/download/v$pkgver/$_pkgname-v$pkgver-aarch64-unknown-linux-gnu.tar.gz")
 
-# ponytail: placeholders until release assets exist; CI fills real hashes before AUR publishing.
 sha256sums_x86_64=('SKIP')
 sha256sums_aarch64=('SKIP')
 
