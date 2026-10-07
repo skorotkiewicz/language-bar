@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-labelledby="title description">
+  <title id="title">Language bar's very enthusiastic keyboard</title>
+  <desc id="description">A googly-eyed keyboard climbs out of a desktop tray, waving Polish and German flags beyond a little window frame.</desc>
+  <defs>
+    <g id="key">
+      <rect width="15" height="11" rx="3" fill="#fffaf0" stroke="#283733" stroke-width="2"/>
+    </g>
+    <clipPath id="polish-flag">
+      <path d="M0 0Q15-7 30 0T60 0V34Q45 41 30 34T0 34Z"/>
+    </clipPath>
+    <clipPath id="german-flag">
+      <path d="M0 0Q15-7 30 0T60 0V36Q45 43 30 36T0 36Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="159" cy="284" rx="110" ry="9" fill="#283733" opacity=".12"/>
+
+  <!-- The mascot escapes this drawn frame, not GitHub's page layout. -->
+  <g stroke="#283733" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="61" y="83" width="198" height="184" rx="19" fill="#fff7e7" stroke-width="3"/>
+    <path d="M62 111H258" fill="none" stroke-width="2"/>
+    <circle cx="77" cy="98" r="3" fill="#ef765e" stroke="none"/>
+    <circle cx="88" cy="98" r="3" fill="#efb64b" stroke="none"/>
+    <circle cx="99" cy="98" r="3" fill="#79b99d" stroke="none"/>
+    <path d="M218 98H242" stroke-width="3"/>
+
+    <!-- Flagpoles and wildly overconfident little arms. -->
+    <path d="M99 178Q48 189 47 120M225 168Q280 176 278 117" fill="none" stroke-width="9"/>
+    <path d="M99 178Q48 189 47 120M225 168Q280 176 278 117" fill="none" stroke="#72bba4" stroke-width="5"/>
+    <path d="M48 131L27 39M279 128L257 35" stroke-width="5"/>
+
+    <g transform="translate(27 39) rotate(-12)">
+      <g clip-path="url(#polish-flag)" stroke="none">
+        <rect x="-1" y="-8" width="62" height="50" fill="#fffaf0"/>
+        <path d="M-1 17Q15 10 30 17T61 17V43H-1Z" fill="#e84e54"/>
+      </g>
+      <path d="M0 0Q15-7 30 0T60 0V34Q45 41 30 34T0 34Z" fill="none" stroke-width="3"/>
+      <circle cy="-3" r="4" fill="#efb64b" stroke-width="2"/>
+    </g>
+    <g transform="translate(257 35) rotate(12)">
+      <g clip-path="url(#german-flag)" stroke="none">
+        <rect x="-1" y="-8" width="62" height="55" fill="#283733"/>
+        <path d="M-1 12Q15 5 30 12T61 12V47H-1Z" fill="#e84e54"/>
+        <path d="M-1 24Q15 17 30 24T61 24V47H-1Z" fill="#f5c451"/>
+      </g>
+      <path d="M0 0Q15-7 30 0T60 0V36Q45 43 30 36T0 36Z" fill="none" stroke-width="3"/>
+      <circle cy="-3" r="4" fill="#efb64b" stroke-width="2"/>
+    </g>
+
+    <!-- Mittens gripping the poles. -->
+    <path d="M41 119Q35 112 40 106Q45 101 51 108L56 116Q62 124 54 129Q46 134 41 125Z" fill="#fffaf0" stroke-width="3"/>
+    <path d="M271 115Q264 107 270 103Q276 99 281 107L287 117Q292 125 284 129Q276 132 272 124Z" fill="#fffaf0" stroke-width="3"/>
+    <path d="M44 113L51 121M274 110L281 120" stroke-width="2"/>
+
+    <!-- Feet: one planted, one already off on an adventure. -->
+    <path d="M133 210L124 239M191 211Q194 233 215 232" fill="none" stroke-width="9"/>
+    <path d="M133 210L124 239M191 211Q194 233 215 232" fill="none" stroke="#72bba4" stroke-width="5"/>
+    <path d="M124 231Q108 228 103 239Q101 245 117 246H138Q143 239 133 236Z" fill="#fffaf0" stroke-width="3"/>
+    <path d="M213 224Q227 216 235 225Q241 233 229 238L211 243Q204 238 209 231Z" fill="#fffaf0" stroke-width="3"/>
+    <path d="M107 241H137M213 238L233 230" fill="none" stroke-width="2"/>
+
+    <g transform="rotate(-8 163 170)">
+      <!-- Keyboard body and a small cable doing its best cowlick impression. -->
+      <path d="M153 125Q142 92 161 95Q176 99 163 108" fill="none" stroke-width="5"/>
+      <rect x="82" y="129" width="160" height="91" rx="19" fill="#72bba4" stroke-width="4"/>
+      <path d="M94 211Q162 226 230 211" fill="none" stroke="#4e927b" stroke-width="5"/>
+
+      <!-- Uneven eyes, because this keyboard has seen your keybindings. -->
+      <ellipse cx="124" cy="141" rx="21" ry="24" fill="#fffaf0" stroke-width="3"/>
+      <ellipse cx="174" cy="132" rx="25" ry="28" fill="#fffaf0" stroke-width="3"/>
+      <ellipse cx="120" cy="136" rx="7" ry="10" fill="#283733" stroke="none"/>
+      <ellipse cx="181" cy="124" rx="8" ry="11" fill="#283733" stroke="none"/>
+      <circle cx="118" cy="132" r="2" fill="#fffaf0" stroke="none"/>
+      <circle cx="178" cy="120" r="3" fill="#fffaf0" stroke="none"/>
+      <path d="M103 108Q114 100 124 105M170 93Q184 87 196 97" fill="none" stroke-width="4"/>
+      <ellipse cx="102" cy="163" rx="9" ry="5" fill="#ef917a" stroke="none"/>
+      <ellipse cx="203" cy="153" rx="9" ry="5" fill="#ef917a" stroke="none"/>
+      <path d="M139 166Q156 175 175 163Q169 187 154 184Q143 182 139 166Z" fill="#283733" stroke-width="2"/>
+      <path d="M144 168L146 175L154 176L155 171" fill="#fffaf0" stroke="none"/>
+      <path d="M153 180Q160 172 168 178Q162 185 154 182Z" fill="#ef917a" stroke="none"/>
+
+      <use href="#key" x="98" y="186"/>
+      <use href="#key" x="118" y="186"/>
+      <use href="#key" x="138" y="190"/>
+      <use href="#key" x="158" y="190"/>
+      <use href="#key" x="178" y="186"/>
+      <use href="#key" x="198" y="182"/>
+      <use href="#key" x="218" y="177"/>
+      <rect x="121" y="205" width="66" height="10" rx="4" fill="#fffaf0" stroke-width="2"/>
+      <path d="M131 210H175" stroke="#d6d3bb" stroke-width="2"/>
+    </g>
+
+    <!-- The actual tray, with a tiny US flag in its status area. -->
+    <path d="M42 249Q54 274 79 276H239Q266 274 278 249" fill="#b9c8c0" stroke-width="4"/>
+    <ellipse cx="160" cy="248" rx="118" ry="13" fill="#e6eee7" stroke-width="4"/>
+    <path d="M68 251Q158 265 252 251" fill="none" stroke="#9daf9f" stroke-width="2"/>
+    <rect x="132" y="265" width="31" height="9" rx="3" fill="#fffaf0" stroke-width="2"/>
+    <path d="M134 267H161M134 270H161M134 273H161" stroke="#e84e54" stroke-width="1"/>
+    <path d="M133 266H145V271H133Z" fill="#315a7b" stroke="none"/>
+    <path d="M136 268H142M138 269H140" stroke="#fffaf0" stroke-width="1"/>
+    <circle cx="174" cy="270" r="3" fill="#efb64b" stroke-width="2"/>
+    <path d="M184 269L187 272L193 266" fill="none" stroke-width="2"/>
+
+    <!-- Comic motion marks stay inside the SVG's viewBox. -->
+    <path d="M13 94L23 99M16 110H26M295 88L303 82M297 104L310 101" fill="none" stroke="#d18b34" stroke-width="3"/>
+    <path d="M109 53L115 44L122 53M118 61V69" fill="none" stroke="#d18b34" stroke-width="3"/>
+    <path d="M215 62Q207 51 216 47Q228 42 225 53L220 58M218 66V67" fill="none" stroke="#283733" stroke-width="3"/>
+  </g>
+</svg>
