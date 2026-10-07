@@ -1,6 +1,6 @@
-# Language bar
-
 <img align="right" src="assets/logo.svg" width="220" height="220" alt="A googly-eyed keyboard climbing out of a tray and waving Polish and German flags">
+
+# Language bar
 
 [![Build](https://github.com/skorotkiewicz/language-bar/actions/workflows/build.yml/badge.svg)](https://github.com/skorotkiewicz/language-bar/actions/workflows/build.yml)
 [![Release](https://img.shields.io/github/v/release/skorotkiewicz/language-bar?color=blue)](https://github.com/skorotkiewicz/language-bar/releases/latest)
@@ -8,8 +8,6 @@
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-lightgrey)](LICENSE)
 
 Rust keyboard-layout flag tray for Linux. Uses your active keyboard layout, not the system locale.
-
-<br clear="right">
 
 | Session | Detection and switching | Custom shortcut |
 | --- | --- | --- |
