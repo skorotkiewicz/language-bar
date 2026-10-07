@@ -1,5 +1,9 @@
+mod backend;
 mod flags;
 mod shortcut;
+mod x11;
+
+use backend::{Backend, Kind};
 
 use ksni::{blocking::TrayMethods, menu::*};
 use serde::Deserialize;
@@ -179,7 +183,7 @@ fn configure(key: String, actions: Sender<Action>) {
             .args([
                 "--entry",
                 "--title=Keyboard shortcut",
-                "--text=Enter a niri shortcut, for example Mod+Space or Ctrl+Alt+L.",
+                "--text=Enter a shortcut, for example Mod+Space or Ctrl+Alt+L. Mod means Super on Sway and X11.",
                 "--entry-text",
                 &key,
             ])
@@ -235,27 +239,50 @@ fn event_stream(actions: Sender<Action>) -> Result<()> {
     Ok(())
 }
 
-fn switch(target: &str) -> Result<()> {
-    let output = Command::new("niri")
-        .args(["msg", "action", "switch-layout", target])
-        .output()?;
-    if !output.status.success() {
-        return Err(format!(
-            "Could not switch layout: {}",
-            String::from_utf8_lossy(&output.stderr)
-        )
-        .into());
+fn update_shortcut(
+    dir: &std::path::Path,
+    kind: Kind,
+    backend: &Backend,
+    current: &Shortcut,
+    proposed: &Shortcut,
+) -> Result<()> {
+    backend.set_shortcut(proposed)?;
+    if let Err(error) = shortcut::save(dir, proposed, kind) {
+        backend.set_shortcut(current)?;
+        return Err(error);
+    }
+    if kind == Kind::Sway {
+        if let Err(error) = backend::sway_command("reload") {
+            shortcut::save(dir, current, kind)?;
+            backend::sway_command("reload")?;
+            return Err(error);
+        }
     }
     Ok(())
 }
 
 fn run() -> Result<()> {
-    let args: Vec<_> = env::args().skip(1).collect();
+    let mut args: Vec<_> = env::args().skip(1).collect();
     if args == ["--help"] || args == ["-h"] {
         println!(
-            "Language tray for niri\n\nUsage: language-tray-indicator [--shortcut KEY | --enable-shortcut | --disable-shortcut]\n\nNo arguments: start the tray. Shortcuts are disabled by default.\nUse --shortcut Mod+Space to set a key without enabling it.\nShortcut dialogs require zenity. A StatusNotifier tray host such as Waybar is required."
+            "Language tray for niri, Sway, and X11\n\nUsage: language-tray-indicator [--backend niri|sway|x11] [--shortcut KEY | --enable-shortcut | --disable-shortcut | --toggle]\n\nNo arguments: detect the session and start the tray. Shortcuts are disabled by default.\nUse --shortcut Mod+Space to set a key without enabling it.\nShortcut dialogs require zenity. A StatusNotifier tray host such as Waybar is required.\nOther wlroots compositors do not share a layout API and are not supported."
         );
         return Ok(());
+    }
+    let kind = if let Some(index) = args.iter().position(|arg| arg == "--backend") {
+        let kind = match args.get(index + 1).map(String::as_str) {
+            Some("niri") => Kind::Niri,
+            Some("sway") => Kind::Sway,
+            Some("x11") => Kind::X11,
+            _ => return Err("Use --backend niri, sway, or x11".into()),
+        };
+        args.drain(index..index + 2);
+        kind
+    } else {
+        Kind::detect()?
+    };
+    if args == ["--toggle"] {
+        return Backend::connect(kind)?.switch("next");
     }
     let dir: PathBuf = shortcut::directory()?;
     let mut settings = shortcut::load(&dir)?;
@@ -266,25 +293,20 @@ fn run() -> Result<()> {
             [option] if option == "--disable-shortcut" => settings.enabled = false,
             _ => return Err("Unknown arguments. Use --help.".into()),
         }
-        shortcut::save(&dir, &settings)?;
-        println!("{}", shortcut::instructions(&dir));
+        shortcut::save(&dir, &settings, kind)?;
+        if kind == Kind::Sway {
+            backend::sway_command("reload")?;
+        }
+        println!("{}", shortcut::instructions(&dir, kind));
         return Ok(());
     }
-    // Create the disabled include on first launch. Never edit the user's niri config.
-    shortcut::save(&dir, &settings)?;
-    let output = Command::new("niri")
-        .args(["msg", "--json", "keyboard-layouts"])
-        .output()?;
-    if !output.status.success() {
-        return Err(format!(
-            "Could not read niri layouts: {}",
-            String::from_utf8_lossy(&output.stderr)
-        )
-        .into());
-    }
-    let layouts: Layouts = serde_json::from_slice(&output.stdout)?;
+    let backend = Backend::connect(kind)?;
+    let layouts = backend.layouts()?;
+    // Never edit the user's compositor config. The optional include is opt-in.
+    shortcut::save(&dir, &settings, kind)?;
+    backend.set_shortcut(&settings)?;
     let (actions, receiver) = mpsc::channel();
-    event_stream(actions.clone())?;
+    backend.watch(actions.clone())?;
     let handle = Tray {
         layouts,
         shortcut: settings.clone(),
@@ -293,8 +315,8 @@ fn run() -> Result<()> {
     .spawn()?;
     for action in receiver {
         let result = match action {
-            Action::Next => switch("next"),
-            Action::Select(idx) => switch(&idx.to_string()), // Niri's layout indexes are zero-based.
+            Action::Next => backend.switch("next"),
+            Action::Select(idx) => backend.switch(&idx.to_string()),
             Action::Configure => {
                 configure(settings.key.clone(), actions.clone());
                 Ok(())
@@ -304,10 +326,10 @@ fn run() -> Result<()> {
                     key,
                     ..settings.clone()
                 };
-                shortcut::save(&dir, &proposed).map(|()| {
+                update_shortcut(&dir, kind, &backend, &settings, &proposed).map(|()| {
                     settings = proposed;
                     handle.update(|tray| tray.shortcut = settings.clone());
-                    notify("--info", shortcut::instructions(&dir));
+                    notify("--info", shortcut::instructions(&dir, kind));
                 })
             }
             Action::Enable(enabled) => {
@@ -315,17 +337,18 @@ fn run() -> Result<()> {
                     enabled,
                     ..settings.clone()
                 };
-                shortcut::save(&dir, &proposed).map(|()| {
+                update_shortcut(&dir, kind, &backend, &settings, &proposed).map(|()| {
                     settings = proposed;
                     handle.update(|tray| tray.shortcut = settings.clone());
                     if enabled {
-                        notify("--info", shortcut::instructions(&dir));
+                        notify("--info", shortcut::instructions(&dir, kind));
                     }
                 })
             }
             Action::Layout(event) => {
                 handle.update(|tray| tray.layouts.apply(event));
-                Ok(())
+                // X11 keymaps may change at runtime; refresh an enabled key grab too.
+                backend.set_shortcut(&settings)
             }
             Action::Error(error) => Err(error.into()),
             Action::Disconnected(error) => return Err(error.into()),

@@ -1,67 +1,118 @@
+use base64::{Engine, engine::general_purpose::STANDARD};
 use ksni::Icon;
+use resvg::{tiny_skia, usvg};
+use std::{collections::HashMap, fs, sync::OnceLock};
 
-pub fn icon(layout: &str) -> Icon {
-    const W: usize = 32;
-    const H: usize = 32;
-    let white = [255, 255, 255];
-    let red = [220, 35, 50];
-    let blue = [0, 55, 140];
-    let name = layout.to_lowercase();
-    let mut data = vec![0; W * H * 4];
-    for y in 5..27 {
-        for x in 0..W {
-            let row = y - 5;
-            let color = if name.starts_with("polish") {
-                if row < 11 { white } else { red }
-            } else if name.starts_with("german") {
-                [[20, 20, 20], red, [255, 205, 0]][(row * 3 / 22).min(2)]
-            } else if name.starts_with("english (uk") {
-                let diagonal = ((x * 21 / 31) as i32 - row as i32).abs() < 2
-                    || ((31 - x) * 21 / 31) as i32 == row as i32;
-                if (13..19).contains(&x) || (9..13).contains(&row) {
-                    red
-                } else if (11..21).contains(&x) || (7..15).contains(&row) || diagonal {
-                    white
-                } else {
-                    blue
-                }
-            } else if name.starts_with("english") {
-                if x < 14 && row < 12 {
-                    // At tray size, single pixels stand in for the US stars.
-                    if x % 3 == 1 && row % 2 == 1 {
-                        white
-                    } else {
-                        blue
-                    }
-                } else if (row * 13 / 22) % 2 == 0 {
-                    red
-                } else {
-                    white
-                }
-            } else if name.starts_with("french") {
-                [blue, white, red][(x * 3 / W).min(2)]
-            } else if name.starts_with("italian") {
-                [[0, 145, 70], white, red][(x * 3 / W).min(2)]
-            } else if name.starts_with("russian") {
-                [white, blue, red][(row * 3 / 22).min(2)]
-            } else if name.starts_with("ukrainian") {
-                if row < 11 { blue } else { [255, 210, 0] }
-            } else {
-                // ponytail: unlisted layouts use a keyboard icon; add a flag mapping when needed.
-                let key = (4..28).contains(&x)
-                    && (5..17).contains(&row)
-                    && (x % 5 < 3 && row % 4 < 2 || row >= 14 && (9..23).contains(&x));
-                if key { white } else { [65, 65, 65] }
-            };
-            let offset = (y * W + x) * 4;
-            data[offset..offset + 4].copy_from_slice(&[255, color[0], color[1], color[2]]);
+fn registry(xml: &str) -> Result<HashMap<String, String>, roxmltree::Error> {
+    let doc = roxmltree::Document::parse_with_options(
+        xml,
+        roxmltree::ParsingOptions {
+            allow_dtd: true,
+            nodes_limit: 100_000,
+            ..Default::default()
+        },
+    )?;
+    let mut names = HashMap::new();
+    for layout in doc.descendants().filter(|n| n.has_tag_name("layout")) {
+        let Some(item) = layout.children().find(|n| n.has_tag_name("configItem")) else {
+            continue;
+        };
+        let text = |tag| {
+            item.children()
+                .find(|n| n.has_tag_name(tag))
+                .and_then(|n| n.text())
+        };
+        let code = text("name").unwrap_or_default().to_uppercase();
+        // Layout codes usually identify a country. For language-only layouts, use a
+        // flag only when the registry identifies exactly one country, never guess.
+        let countries: Vec<_> = item
+            .descendants()
+            .filter(|n| n.has_tag_name("iso3166Id"))
+            .filter_map(|n| n.text())
+            .collect();
+        let country = if rs_grid_icons::flag_data_uri(&code).is_some() {
+            code
+        } else if countries.len() == 1 {
+            countries[0].into()
+        } else {
+            continue;
+        };
+        for config in layout
+            .descendants()
+            .filter(|n| n.has_tag_name("configItem"))
+        {
+            if let Some(description) = config
+                .children()
+                .find(|n| n.has_tag_name("description"))
+                .and_then(|n| n.text())
+            {
+                names.insert(description.to_owned(), country.clone());
+            }
+        }
+        if let Some(code) = text("name") {
+            names.insert(code.into(), country);
         }
     }
-    Icon {
-        width: W as i32,
-        height: H as i32,
+    Ok(names)
+}
+
+fn countries() -> &'static HashMap<String, String> {
+    static COUNTRIES: OnceLock<HashMap<String, String>> = OnceLock::new();
+    COUNTRIES.get_or_init(|| {
+        let dir = std::env::var_os("XKB_CONFIG_ROOT")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| "/usr/share/X11/xkb".into());
+        let path = dir.join("rules/evdev.xml");
+        match fs::read_to_string(&path)
+            .map_err(|e| e.to_string())
+            .and_then(|xml| registry(&xml).map_err(|e| e.to_string()))
+        {
+            Ok(map) => map,
+            Err(e) => {
+                eprintln!(
+                    "Could not load XKB flag mappings from {}: {e}",
+                    path.display()
+                );
+                HashMap::new()
+            }
+        }
+    })
+}
+
+fn render(svg: &[u8]) -> Result<Icon, Box<dyn std::error::Error>> {
+    let tree = usvg::Tree::from_data(svg, &usvg::Options::default())?;
+    let mut pixmap = tiny_skia::Pixmap::new(32, 32).ok_or("Could not allocate flag image")?;
+    let scale = (32.0 / tree.size().width()).min(32.0 / tree.size().height());
+    let transform = tiny_skia::Transform::from_scale(scale, scale).post_translate(
+        (32.0 - tree.size().width() * scale) / 2.0,
+        (32.0 - tree.size().height() * scale) / 2.0,
+    );
+    resvg::render(&tree, transform, &mut pixmap.as_mut());
+    // tiny-skia stores premultiplied RGBA; StatusNotifier expects straight ARGB.
+    let data = pixmap
+        .pixels()
+        .iter()
+        .flat_map(|p| {
+            let p = p.demultiply();
+            [p.alpha(), p.red(), p.green(), p.blue()]
+        })
+        .collect();
+    Ok(Icon {
+        width: 32,
+        height: 32,
         data,
-    }
+    })
+}
+
+pub fn icon(layout: &str) -> Icon {
+    let result = countries()
+        .get(layout)
+        .or_else(|| countries().get(&layout.to_lowercase()))
+        .and_then(|code| rs_grid_icons::flag_data_uri(code))
+        .and_then(|uri| uri.strip_prefix("data:image/svg+xml;base64,"))
+        .and_then(|encoded| STANDARD.decode(encoded).ok())
+        .and_then(|svg| render(&svg).ok());
+    result.unwrap_or_else(|| render(br##"<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24"><rect x="1" y="2" width="30" height="20" rx="2" fill="#555"/><path d="M5 7h3m3 0h3m3 0h3m3 0h3M5 12h3m3 0h3m3 0h3m3 0h3M9 17h14" stroke="white" stroke-width="2"/></svg>"##).expect("built-in keyboard SVG is valid"))
 }
 
 #[cfg(test)]
@@ -69,15 +120,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn flags_are_argb_with_transparent_padding() {
-        let pl = icon("Polish");
-        assert_eq!(pl.data.len(), 32 * 32 * 4);
-        assert_eq!(&pl.data[..4], &[0, 0, 0, 0]);
-        assert_eq!(&pl.data[5 * 32 * 4..5 * 32 * 4 + 4], &[255, 255, 255, 255]);
-        assert_eq!(&pl.data[26 * 32 * 4..26 * 32 * 4 + 4], &[255, 220, 35, 50]);
-        assert_ne!(icon("English (US)").data, pl.data);
-        assert_ne!(icon("German").data, pl.data);
+    fn renders_bundled_flags_and_maps_layout_variants() {
+        assert!(rs_grid_icons::flag_count() >= 250);
+        for (_, uri) in rs_grid_icons::all_flags() {
+            let svg = STANDARD.decode(uri.split_once(',').unwrap().1).unwrap();
+            let image = render(&svg).unwrap();
+            assert_eq!(image.data.len(), 32 * 32 * 4);
+            assert!(image.data.chunks_exact(4).any(|p| p[0] > 0));
+        }
+        let xml = r#"<xkbConfigRegistry><layoutList><layout><configItem><name>jp</name><description>Japanese</description></configItem><variantList><variant><configItem><name>kana</name><description>Japanese (Kana)</description></configItem></variant></variantList></layout><layout><configItem><name>ara</name><description>Arabic</description><countryList><iso3166Id>AE</iso3166Id><iso3166Id>EG</iso3166Id></countryList></configItem></layout></layoutList></xkbConfigRegistry>"#;
+        let map = registry(xml).unwrap();
+        assert_eq!(map.get("Japanese (Kana)").unwrap(), "JP");
+        assert!(!map.contains_key("Arabic"));
+        assert_ne!(icon("Japanese").data, icon("Polish").data);
         assert_ne!(icon("English (UK)").data, icon("English (US)").data);
-        assert_ne!(icon("Unknown").data, pl.data);
     }
 }
