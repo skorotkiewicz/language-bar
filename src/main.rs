@@ -312,6 +312,8 @@ fn run() -> Result<()> {
         shortcut: settings.clone(),
         actions: actions.clone(),
     }
+    // The tray host may still be starting when the compositor launches us.
+    .assume_sni_available(true)
     .spawn()?;
     for action in receiver {
         let result = match action {

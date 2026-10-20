@@ -43,6 +43,18 @@ Requires a StatusNotifier tray host, such as Waybar with its `tray` module enabl
 
 Flags come from `rs-grid-icons`, which bundles 254 country and territory SVGs. `resvg` renders them offline. Layout names and variants map to countries through the system XKB registry. Layouts without an unambiguous country, such as generic Arabic or Latin American layouts, use a keyboard icon rather than a guessed flag. The tooltip always shows the full layout name. Set `XKB_CONFIG_ROOT` if your XKB data is installed elsewhere.
 
+## Start at login
+
+On niri, add this to `~/.config/niri/config.kdl`:
+
+```kdl
+spawn-at-startup "language-bar"
+```
+
+Use the full executable path if it is not on niri's `PATH`. Do not add `&`, since niri launches the executable directly without a shell. Startup commands run when you log in to niri, not when you save the config. To start it in the current session, run `niri msg action spawn -- language-bar`.
+
+No systemd service is required. Keep your tray host, such as Waybar with the `tray` module, enabled at login too. Language bar waits for the tray host if it starts later.
+
 ## Optional shortcut
 
 Disabled by default. Right-click, choose **Configure shortcut...**, enter a binding such as `Ctrl+Alt+L`, then check **Enable shortcut**. Settings survive app restarts. Choose a key not already bound by your desktop or another app.

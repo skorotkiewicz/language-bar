@@ -1,7 +1,7 @@
 # Maintainer: Sebastian Korotkiewicz <skorotkiewicz@gmail.com>
 pkgname=language-bar-bin
 _pkgname=language-bar
-pkgver=0.2.0
+pkgver=0.0.0
 pkgrel=1
 pkgdesc="Keyboard layout flag tray for niri, Sway, and X11"
 arch=('x86_64' 'aarch64')
